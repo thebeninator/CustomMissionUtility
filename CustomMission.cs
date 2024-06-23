@@ -12,19 +12,22 @@ namespace CustomMissionUtility
 {
     public class CustomMission
     {
-        public CustomMissionData mission_data;
-        public virtual void OnLoad() {}
+        public CustomMissionData MissionData;
+
+        public static bool SetupDone = false;
+
+        public void OnLoad() {}
 
         public void CreateMeta()
         {
             GameObject meta_obj = new GameObject("META");
-            mission_data.Meta = meta_obj.AddComponent<MissionSceneMeta>();
-            mission_data.Meta._startingUnits = new MissionSceneMeta.StartingUnitData[] { };
+            MissionData.Meta = meta_obj.AddComponent<MissionSceneMeta>();
+            MissionData.Meta._startingUnits = new MissionSceneMeta.StartingUnitData[] { };
         }
 
         public void SetStartingUnit(Unit unit)
         {
-            mission_data.Meta._startingUnits = Util.AppendToArray(mission_data.Meta._startingUnits,
+            MissionData.Meta._startingUnits = Util.AppendToArray(MissionData.Meta._startingUnits,
                 new MissionSceneMeta.StartingUnitData()
                 {
                     Allegiance = ((Vehicle)unit).Allegiance,

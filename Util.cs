@@ -7,12 +7,7 @@ using UnityEngine;
 
 namespace CustomMissionUtility
 {
-    public class AlreadyConverted : MonoBehaviour
-    {
-
-    }
-
-    public class Util
+    internal class Util
     {
         public static string[] menu_screens = new string[] {
             "MainMenu2_Scene",

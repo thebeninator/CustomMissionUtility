@@ -55,6 +55,11 @@ namespace CustomMissionUtility
             Count,
         }
 
+        public static GameObject GetVehicle(Vehicles id)
+        {
+            return VicsLookup[(int)id];
+        }
+
         private static bool vics_done = false;
         private static Vehicle[] vehicles;
         private static Dictionary<int, GameObject> VicsLookup = new Dictionary<int, GameObject>() { };
@@ -94,16 +99,14 @@ namespace CustomMissionUtility
             "TOW"
         };   
 
-        private static GameObject FindVehicle(string id) {
+        private static GameObject FindVehicle(string id)
+        {
             return vehicles.Where(v => v.name == id).FirstOrDefault().gameObject;
         }
 
-        private static void AddVehicleRef(int ref_id, string game_id) {
+        private static void AddVehicleRef(int ref_id, string game_id)
+        {
             VicsLookup.Add(ref_id, FindVehicle(game_id));
-        }
-
-        public static GameObject GetVehicle(Vehicles id) {
-            return VicsLookup[(int)id];
         }
 
         internal static void GetVicReferences() {

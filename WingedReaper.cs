@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using CustomMissionUtility;
 using UnityEngine;
+using MelonLoader;
 
 public class WingedReaper : CustomMission
 {
-    public CustomMissionData t = new CustomMissionData()
+    public new CustomMissionData MissionData = new CustomMissionData()
     {
         Name = "Winged Reaper",
         Id = "ac130_mission_winged_reaper",
@@ -27,8 +28,12 @@ public class WingedReaper : CustomMission
         "Gunship Loadout: 105mm howitzer M102, 40mm cannon L/60, 20mm rotary cannon M61"),
     };
 
-    public override void OnLoad() {
+    public new void OnLoad() {
         GameObject m1ip = Tools.SpawnVehicle(References.Vehicles.M1IP);
         SetStartingUnit(m1ip);
+    }
+
+    public void yes() {
+        MelonLogger.Msg("yes");
     }
 }
