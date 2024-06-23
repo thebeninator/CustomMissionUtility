@@ -10,15 +10,13 @@ namespace CustomMissionUtility
 {
     public class CustomMissionData
     {
-        public delegate void SceneLoadedDelegate(); 
-
         /// <summary>
         /// The name of the mission as it appears in the mission select menu
         /// </summary>
         public string Name;
 
         /// <summary>
-        /// Name of the unity scene 
+        /// Name of the unity scene WITHOUT the [CUSTOM] tag
         /// </summary>
         public string Id;
 
@@ -52,8 +50,8 @@ namespace CustomMissionUtility
         /// </summary>
         public References.Theater Theater;
 
-        public List<FactionMissionInfo> FactionInfo;
+        internal List<FactionMissionInfo> FactionInfo;
 
-        public MissionSceneMeta Meta;
+        internal MissionSceneMeta Meta;
     }
 }
