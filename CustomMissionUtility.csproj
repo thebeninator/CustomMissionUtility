@@ -54,10 +54,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomMission.cs" />
+    <Compile Include="CustomMissionData.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tools.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="References.cs" />
+    <Compile Include="WingedReaper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

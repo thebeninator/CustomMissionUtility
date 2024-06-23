@@ -18,17 +18,92 @@ namespace CustomMissionUtility
             Grafenwoehr
         }
 
+        public enum Vehicles { 
+            BMP1_NVA,
+            BMP1_Soviet,
+            BMP1P_NVA,
+            BMP1P_Soviet,
+            BMP2_NVA,
+            BMP2_Soviet,
+            BRDM2_NVA,
+            BRDM2_Soviet,
+            BTR60_NVA,
+            BTR60_Soviet,
+            Static_9K111_NVA,
+            Static_9K111_Soviet,
+            Ural_NVA, 
+            Ural_Soviet,
+            T62,
+            T64A,
+            T64B,
+            T80B,
+            BTR70,
+            GopnikCar,
+            T55A,
+            T72M,
+            T72M_Gills,
+            T72M1,
+            PT76B,
+            M1,
+            M1IP,
+            M60A1,
+            M60A3,
+            M2Bradley,
+            M113,
+            M923,
+            Static_TOW,
+            Count,
+        }
+
         private static bool vics_done = false;
         private static Vehicle[] vehicles;
-
-        public static Dictionary<string, GameObject> Vehicles = new Dictionary<string, GameObject>() { };
+        private static Dictionary<int, GameObject> VicsLookup = new Dictionary<int, GameObject>() { };
+        private static string[] VicGameIds = new string[] {
+            "BMP1",
+            "BMP1 Soviet",
+            "BMP1P (Variant)",
+            "BMP1P (Variant) Soviet",
+            "BMP2",
+            "BMP2 Soviet",
+            "BRDM2",
+            "BRDM2 Soviet",
+            "BTR60PB",
+            "BTR60PB Soviet",
+            "9K111",
+            "9K111 Soviet",
+            "Ural",
+            "Ural Soviet",
+            "T62",
+            "T64A",
+            "T64B",
+            "T80B",
+            "BTR70",
+            "UAZ469",
+            "T55A",
+            "T72M",
+            "T72M Gill (Variant)",
+            "T72M1",
+            "PT76B",
+            "M1",
+            "M1IP",
+            "M60A1",
+            "M60A3",
+            "M2 Bradley",
+            "M113",
+            "M923",
+            "TOW"
+        };   
 
         private static GameObject FindVehicle(string id) {
             return vehicles.Where(v => v.name == id).FirstOrDefault().gameObject;
         }
 
-        private static void AddVehicleRef(string ref_id, string game_id) { 
-            Vehicles.Add(ref_id, FindVehicle(game_id));
+        private static void AddVehicleRef(int ref_id, string game_id) {
+            VicsLookup.Add(ref_id, FindVehicle(game_id));
+        }
+
+        public static GameObject GetVehicle(Vehicles id) {
+            return VicsLookup[(int)id];
         }
 
         internal static void GetVicReferences() {
@@ -36,52 +111,9 @@ namespace CustomMissionUtility
 
             vehicles = Resources.FindObjectsOfTypeAll<Vehicle>();
 
-            AddVehicleRef("BMP1 NVA", "BMP1");
-            AddVehicleRef("BMP1 SOV", "BMP1 Soviet");
-
-            AddVehicleRef("BMP1P NVA", "BMP1P (Variant)");
-            AddVehicleRef("BMP1P SOV", "BMP1P (Variant) Soviet");
-
-            AddVehicleRef("BMP2 NVA", "BMP2");
-            AddVehicleRef("BMP2 SOV", "BMP2 Soviet");
-
-            AddVehicleRef("BRDM2 NVA", "BRDM2");
-            AddVehicleRef("BRDM2 SOV", "BRDM2 Soviet");
-
-            AddVehicleRef("BTR60 NVA", "BTR60PB");
-            AddVehicleRef("BTR60 SOV", "BTR60PB Soviet");
-
-            AddVehicleRef("9K111 NVA", "9K111");
-            AddVehicleRef("9K111 SOV", "9K111 Soviet");
-
-            AddVehicleRef("URAL NVA", "Ural");
-            AddVehicleRef("URAL SOV", "Ural Soviet");
-
-            AddVehicleRef("T62", "T62");
-            AddVehicleRef("T64A", "T64A");
-            AddVehicleRef("T64B", "T64B");
-            AddVehicleRef("T80B", "T80B");
-            AddVehicleRef("BTR70", "BTR70");
-            AddVehicleRef("GOPNIK CAR", "UAZ469");
-
-            AddVehicleRef("T55A", "T55A");
-            AddVehicleRef("T72M", "T72M");
-            AddVehicleRef("T72M GILLS", "T72M Gill (Variant)");
-            AddVehicleRef("T72M1", "T72M1");
-            AddVehicleRef("PT76B", "PT76B");
-
-            AddVehicleRef("M1", "M1");
-            AddVehicleRef("M1IP", "M1IP");
-
-            AddVehicleRef("M60A1", "M60A1");
-            AddVehicleRef("M60A3", "M60A3");
-
-            AddVehicleRef("M2 BRADLEY", "M2 Bradley");
-
-            AddVehicleRef("M113", "M113");
-            AddVehicleRef("M923", "M923");
-
-            AddVehicleRef("TOW", "TOW");
+            for (int i = 0; i < (int)Vehicles.Count; i++) {
+                AddVehicleRef(i, VicGameIds[i]);
+            }
 
             vics_done = true;
         }
