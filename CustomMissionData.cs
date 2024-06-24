@@ -1,12 +1,4 @@
-﻿using GHPC.Mission;
-using UnityEngine;
-using GHPC;
-using GHPC.Vehicle;
-using GHPC.Mission.Data;
-using System.Collections.Generic;
-using System;
-
-namespace CustomMissionUtility
+﻿namespace CustomMissionUtility
 {
     public class CustomMissionData
     {
@@ -16,9 +8,14 @@ namespace CustomMissionUtility
         public string Name;
 
         /// <summary>
-        /// Name of the unity scene WITHOUT the [CUSTOM] tag
+        /// Name of the unity scene AND asset bundle WITHOUT the [CUSTOM] tag
         /// </summary>
         public string Id;
+
+        /// <summary>
+        /// Name of the folder that this mission is in 
+        /// </summary>
+        public string FolderName;
 
         /// <summary>
         /// Is the mission day or night by default?

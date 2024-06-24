@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using GHPC.Mission;
 using GHPC.Vehicle;
 using GHPC;
 using UnityEngine;
 using GHPC.AI.Platoons;
-using MelonLoader;
-using GHPC.Weapons;
 
 namespace CustomMissionUtility
 {
@@ -51,12 +45,21 @@ namespace CustomMissionUtility
             return new PlatoonData();
         }
 
-        public static Vehicle SpawnVehicle(References.Vehicles id, Vector3 position, Vector3 rotation, bool spawn_active = true) {
+        public static Vehicle SpawnVehicle(References.Vehicles id, Vector3 position, Vector3 rotation, bool spawn_active = true, Faction faction = Faction.Neutral, bool override_faction = false) {
             GameObject vic = GameObject.Instantiate(References.GetVehicle(id));
             vic.transform.position = position;
             vic.transform.localEulerAngles = rotation;
             vic.SetActive(spawn_active);
+
+            if (override_faction)
+                SetVehicleFaction(vic.GetComponent<Vehicle>(), faction);
+
             return vic.GetComponent<Vehicle>();
+        }
+
+        public static void SetVehicleFaction(Unit vehicle, Faction faction)
+        {
+            vehicle.Allegiance = faction;
         }
     }
 }

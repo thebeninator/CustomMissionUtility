@@ -52,6 +52,8 @@ namespace CustomMissionUtility
             M113,
             M923,
             Static_TOW,
+            T34,
+            T54A,
             Count,
         }
 
@@ -96,7 +98,9 @@ namespace CustomMissionUtility
             "M2 Bradley",
             "M113",
             "M923",
-            "TOW"
+            "TOW",
+            "T-34-85",
+            "T54A"
         };   
 
         private static GameObject FindVehicle(string id)

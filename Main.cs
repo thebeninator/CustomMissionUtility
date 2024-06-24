@@ -10,12 +10,11 @@ using System.Collections.Generic;
 using MelonLoader.Utils;
 using System.IO;
 using System.Reflection;
-using GHPC.Vehicle;
-using HarmonyLib;
-using Harmony;
+using MelonLoader.Modules;
 
 [assembly: MelonInfo(typeof(CustomMissionUtility.CustomMissionUtility), "Custom Mission Utility", "1.0.0", "ATLAS")]
 [assembly: MelonGame("Radian Simulations LLC", "GHPC")]
+[assembly: MelonPriority(-9999)]
 
 namespace CustomMissionUtility
 {
@@ -41,29 +40,27 @@ namespace CustomMissionUtility
             all_custom_missions.Add(mission as CustomMission);
         }
 
-        public override void OnInitializeMelon()
+        public override void OnEarlyInitializeMelon()
         {
-            AssetBundle.LoadFromFile(Path.Combine(MelonEnvironment.ModsDirectory + "/missioncreator", "ac130_winged_reaper"));
+            string custom_missions_path = Path.Combine(MelonEnvironment.ModsDirectory + "\\CustomMissions");
+            string[] mission_folders_paths = Directory.GetDirectories(custom_missions_path);
 
-            string dlls_path = Path.Combine(MelonEnvironment.ModsDirectory + "\\CustomMissions");
-            string[] dlls_paths = Directory.GetFiles(dlls_path);
-
-
-            foreach (string dll_path in dlls_paths)
+            foreach (string mission_folder_path in mission_folders_paths)
             {
+                string dll_path = Directory.GetFiles(mission_folder_path, "*.dll").First();
+
+                foreach (string mission_bundle_path in Directory.GetFiles(mission_folder_path, "*.mission")) {
+                    AssetBundle.LoadFromFile(mission_bundle_path);
+                }
+
                 Assembly dll = MelonAssembly.LoadMelonAssembly(dll_path).Assembly;
-
-                HarmonyLib.Harmony s = this.HarmonyInstance;
-                s.PatchAll(dll);
-
                 Type[] types = dll.GetTypes();
+
+                HarmonyInstance.PatchAll(dll);
 
                 foreach (Type type in types)
                 {
-                    if (type.IsSubclassOf(typeof(CustomMission)))
-                    {
-                        RegisterMission(type);
-                    }
+                    if (type.IsSubclassOf(typeof(CustomMission))) RegisterMission(type);                
                 }
             }
         }
