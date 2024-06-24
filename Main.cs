@@ -11,6 +11,8 @@ using MelonLoader.Utils;
 using System.IO;
 using System.Reflection;
 using GHPC.Vehicle;
+using HarmonyLib;
+using Harmony;
 
 [assembly: MelonInfo(typeof(CustomMissionUtility.CustomMissionUtility), "Custom Mission Utility", "1.0.0", "ATLAS")]
 [assembly: MelonGame("Radian Simulations LLC", "GHPC")]
@@ -42,6 +44,36 @@ namespace CustomMissionUtility
         public override void OnInitializeMelon()
         {
             AssetBundle.LoadFromFile(Path.Combine(MelonEnvironment.ModsDirectory + "/missioncreator", "ac130_winged_reaper"));
+
+            string dlls_path = Path.Combine(MelonEnvironment.ModsDirectory + "\\CustomMissions");
+            string[] dlls_paths = Directory.GetFiles(dlls_path);
+
+
+            foreach (string dll_path in dlls_paths)
+            {
+                Assembly dll = MelonAssembly.LoadMelonAssembly(dll_path).Assembly;
+
+                HarmonyLib.Harmony s = this.HarmonyInstance;
+                s.PatchAll(dll);
+
+                Type[] types = dll.GetTypes();
+
+                foreach (Type type in types)
+                {
+                    if (type.IsSubclassOf(typeof(CustomMission)))
+                    {
+                        RegisterMission(type);
+                    }
+                }
+            }
+        }
+
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            if (custom_mission_lookup.ContainsKey(sceneName)) { 
+                CreateMeta();
+                all_custom_missions[custom_mission_lookup[sceneName]].OnMissionStartedLoading();
+            }
         }
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)
@@ -53,26 +85,10 @@ namespace CustomMissionUtility
 
             if (custom_mission_lookup.ContainsKey(sceneName))
             {
-                CreateMeta();
-                all_custom_missions[custom_mission_lookup[sceneName]].Setup();
+                all_custom_missions[custom_mission_lookup[sceneName]].OnMissionFinishedLoading();
             }
 
-            if ((sceneName == "MainMenu2_Scene" || sceneName == "MainMenu2-1_Scene") && !all_missions_loaded) {
-                string dlls_path = Path.Combine(MelonEnvironment.ModsDirectory + "\\CustomMissions");
-                string[] dlls_paths = Directory.GetFiles(dlls_path);
-                foreach (string dll_path in dlls_paths)
-                {
-                    Assembly dll = Assembly.LoadFile(dll_path);
-                    Type[] types = dll.GetTypes();
-
-                    foreach (Type type in types)
-                    {
-                        if (type.IsSubclassOf(typeof(CustomMission))) {
-                            RegisterMission(type);
-                        }
-                    }
-                }
-                   
+            if ((sceneName == "MainMenu2_Scene" || sceneName == "MainMenu2-1_Scene") && !all_missions_loaded) {                   
                 if (all_missions_metadata_so == null) all_missions_metadata_so = Resources.FindObjectsOfTypeAll<AllMissionsMetaDataScriptable>().First();
 
                 foreach (CustomMission custom_mission in all_custom_missions) {

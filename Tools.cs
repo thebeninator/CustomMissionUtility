@@ -9,27 +9,29 @@ using GHPC;
 using UnityEngine;
 using GHPC.AI.Platoons;
 using MelonLoader;
+using GHPC.Weapons;
 
 namespace CustomMissionUtility
 {
     public class Tools
     {
-        public static void SetStartingUnit(Unit unit)
+        /// <summary>
+        /// Tells the game what vehicle the player should start in for a given faction
+        /// </summary>
+        public static void SetStartingUnit(Unit unit, Faction faction)
         {
             CustomMissionUtility.MissionMeta._startingUnits = Util.AppendToArray(CustomMissionUtility.MissionMeta._startingUnits,
                 new MissionSceneMeta.StartingUnitData()
                 {
-                    Allegiance = ((Vehicle)unit).Allegiance,
+                    Allegiance = faction,
                     Unit = unit
                 }
             );
         }
 
-        public static void SetStartingUnit(GameObject unit)
-        {
-            SetStartingUnit(unit.GetComponent<Unit>());
-        }
-
+        /// <summary>
+        /// Create a new platoon (a group of vehicles with a leader)
+        /// </summary>
         public static PlatoonData CreatePlatoon(string name, params Vehicle[] units) {
             GameObject platoon_go = new GameObject(name);
 
@@ -41,13 +43,18 @@ namespace CustomMissionUtility
             return data;
         }
 
+        /// <summary>
+        /// Create a new empty platoon (a group of vehicles with a leader)
+        /// </summary>
         public static PlatoonData CreatePlatoon(string name)
         {
             return new PlatoonData();
         }
 
-        public static Vehicle SpawnVehicle(References.Vehicles id, bool spawn_active = true) {
+        public static Vehicle SpawnVehicle(References.Vehicles id, Vector3 position, Vector3 rotation, bool spawn_active = true) {
             GameObject vic = GameObject.Instantiate(References.GetVehicle(id));
+            vic.transform.position = position;
+            vic.transform.localEulerAngles = rotation;
             vic.SetActive(spawn_active);
             return vic.GetComponent<Vehicle>();
         }
