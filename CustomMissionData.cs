@@ -49,9 +49,5 @@ namespace CustomMissionUtility
         /// Determines what map should be loaded
         /// </summary>
         public References.Theater Theater;
-
-        internal List<FactionMissionInfo> FactionInfo;
-
-        internal MissionSceneMeta Meta;
     }
 }

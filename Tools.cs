@@ -7,6 +7,8 @@ using GHPC.Mission;
 using GHPC.Vehicle;
 using GHPC;
 using UnityEngine;
+using GHPC.AI.Platoons;
+using MelonLoader;
 
 namespace CustomMissionUtility
 {
@@ -28,8 +30,26 @@ namespace CustomMissionUtility
             SetStartingUnit(unit.GetComponent<Unit>());
         }
 
-        public static GameObject SpawnVehicle(References.Vehicles id) {
-            return GameObject.Instantiate(References.GetVehicle(id));
+        public static PlatoonData CreatePlatoon(string name, params Vehicle[] units) {
+            GameObject platoon_go = new GameObject(name);
+
+            PlatoonData data = platoon_go.AddComponent<PlatoonData>();
+
+            data.Name = name;
+            data.Units = ((Unit[])units).ToList();
+
+            return data;
+        }
+
+        public static PlatoonData CreatePlatoon(string name)
+        {
+            return new PlatoonData();
+        }
+
+        public static Vehicle SpawnVehicle(References.Vehicles id, bool spawn_active = true) {
+            GameObject vic = GameObject.Instantiate(References.GetVehicle(id));
+            vic.SetActive(spawn_active);
+            return vic.GetComponent<Vehicle>();
         }
     }
 }

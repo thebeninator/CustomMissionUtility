@@ -32,10 +32,9 @@ namespace CustomMissionUtility
             MissionMeta._startingUnits = new MissionSceneMeta.StartingUnitData[] { };
         }
 
-        private void RegisterMission(string id)
+        private void RegisterMission(Type type)
         {
-            Type t = Type.GetType(id);
-            object mission = Activator.CreateInstance(t);
+            object mission = Activator.CreateInstance(type);
             custom_mission_lookup.Add("[CUSTOM]" + (mission as CustomMission).MissionData.Id, all_custom_missions.Count());
             all_custom_missions.Add(mission as CustomMission);
         }
@@ -59,8 +58,21 @@ namespace CustomMissionUtility
             }
 
             if ((sceneName == "MainMenu2_Scene" || sceneName == "MainMenu2-1_Scene") && !all_missions_loaded) {
-                RegisterMission("WingedReaper");
+                string dlls_path = Path.Combine(MelonEnvironment.ModsDirectory + "\\CustomMissions");
+                string[] dlls_paths = Directory.GetFiles(dlls_path);
+                foreach (string dll_path in dlls_paths)
+                {
+                    Assembly dll = Assembly.LoadFile(dll_path);
+                    Type[] types = dll.GetTypes();
 
+                    foreach (Type type in types)
+                    {
+                        if (type.IsSubclassOf(typeof(CustomMission))) {
+                            RegisterMission(type);
+                        }
+                    }
+                }
+                   
                 if (all_missions_metadata_so == null) all_missions_metadata_so = Resources.FindObjectsOfTypeAll<AllMissionsMetaDataScriptable>().First();
 
                 foreach (CustomMission custom_mission in all_custom_missions) {
