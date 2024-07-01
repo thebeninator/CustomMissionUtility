@@ -4,11 +4,34 @@ using GHPC.Vehicle;
 using GHPC;
 using UnityEngine;
 using GHPC.AI.Platoons;
+using GHPC.AI;
+using System.Collections.Generic;
+using GHPC.AI.Interfaces;
 
 namespace CustomMissionUtility
 {
     public class Tools
     {
+        public static Vector3 StrToVec3(string vector) {
+            string[] locs = vector.Split(' ');
+            return new Vector3(float.Parse(locs[0]), float.Parse(locs[1]), float.Parse(locs[2]));
+        }
+
+        public static WaypointHolder CreateWaypoints(string name, params Vector3[] waypoints) {
+            GameObject waypoint_holder_go = new GameObject(name);
+
+            for (int i = 0; i < waypoints.Length; i++) {
+                GameObject waypoint = new GameObject(i.ToString());
+                TransformWaypoint t_waypoint = waypoint.AddComponent<TransformWaypoint>();
+                waypoint.transform.parent = waypoint_holder_go.transform;
+                waypoint.transform.position = waypoints[i];
+            }
+
+            WaypointHolder waypoint_holder = waypoint_holder_go.AddComponent<WaypointHolder>();
+
+            return waypoint_holder;
+        }
+
         /// <summary>
         /// Tells the game what vehicle the player should start in for a given faction
         /// </summary>
@@ -24,7 +47,8 @@ namespace CustomMissionUtility
         }
 
         /// <summary>
-        /// Create a new platoon (a group of vehicles with a leader)
+        /// Create a new platoon
+        /// The first unit will become the platoon leader
         /// </summary>
         public static PlatoonData CreatePlatoon(string name, params Vehicle[] units) {
             GameObject platoon_go = new GameObject(name);
@@ -33,6 +57,9 @@ namespace CustomMissionUtility
 
             data.Name = name;
             data.Units = ((Unit[])units).ToList();
+            foreach (Vehicle unit in units) {
+                unit.transform.parent = platoon_go.transform;
+            }
 
             return data;
         }

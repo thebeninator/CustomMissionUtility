@@ -8,7 +8,7 @@ using GHPC.Vehicle;
 
 namespace CustomMissionUtility
 {
-    public class References
+    public static class References
     {
         public enum Theater {
             EasternHills, 
@@ -57,15 +57,7 @@ namespace CustomMissionUtility
             Count,
         }
 
-        public static GameObject GetVehicle(Vehicles id)
-        {
-            return VicsLookup[(int)id];
-        }
-
-        private static bool vics_done = false;
-        private static Vehicle[] vehicles;
-        private static Dictionary<int, GameObject> VicsLookup = new Dictionary<int, GameObject>() { };
-        private static string[] VicGameIds = new string[] {
+        internal static string[] VicGameIds = new string[] {
             "BMP1",
             "BMP1 Soviet",
             "BMP1P (Variant)",
@@ -101,7 +93,16 @@ namespace CustomMissionUtility
             "TOW",
             "T-34-85",
             "T54A"
-        };   
+        };
+
+        private static bool vics_done = false;
+        private static Vehicle[] vehicles;
+        private static Dictionary<int, GameObject> VicsLookup = new Dictionary<int, GameObject>() { };
+
+        public static GameObject GetVehicle(Vehicles id)
+        {
+            return VicsLookup[(int)id];
+        }
 
         private static GameObject FindVehicle(string id)
         {
