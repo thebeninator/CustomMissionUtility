@@ -4,35 +4,10 @@ using System.Linq;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace CustomMissionUtility
 {
-    [JsonObject(MemberSerialization.OptIn)]
-    internal class AllVehicles
-    {
-        public Dictionary<int, EditorUnit> Units = new Dictionary<int, EditorUnit>();
-
-        [JsonProperty]
-        public List<EditorUnit> UnitsSerialized = new List<EditorUnit>();
-
-        public void Serialize() {
-            UnitsSerialized = Units.Select(u => u.Value).ToList();
-            foreach(EditorUnit u in UnitsSerialized)
-            {
-                u.Serialize();
-            }
-        }
-
-        public void Clear() {
-            foreach (EditorUnit eu in Units.Values) {
-                eu.Remove();
-            }
-
-            Units.Clear();
-            UnitsSerialized.Clear();
-        }
-    }
-
     [JsonObject(MemberSerialization.OptIn)]
     internal class EditorUnit : MonoBehaviour
     {
@@ -56,6 +31,14 @@ namespace CustomMissionUtility
             selectable = GameObject.Instantiate(Editor.unit_selectable);
             selectable.GetComponentInChildren<TextMeshProUGUI>().text = References.GetVehicle(vehicle).name + " (" + id + ")";
             selectable.transform.SetParent(Editor.EDITOR_UI.transform.Find("UnitsRoot/Units/UnitsList/Viewport/Content"), false);
+            selectable.GetComponentInChildren<Button>().onClick.AddListener(delegate ()
+            {
+                Editor.SingleUnitSelected(gameObject);
+            });
+        }
+
+        public void UpdateName() {
+            selectable.GetComponentInChildren<TextMeshProUGUI>().text = References.GetVehicle(vehicle).name + " (" + id + ")";
         }
 
         public void Remove() {

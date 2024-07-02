@@ -5,13 +5,12 @@ using Newtonsoft.Json;
 using MelonLoader.Utils;
 using System.IO;
 using TMPro;
-using MelonLoader.TinyJSON;
-using System.Security.Principal;
-using MelonLoader;
 using System.Linq;
 
+// this is really bad code lol 
 namespace CustomMissionUtility
 {
+    [JsonObject(MemberSerialization.OptIn)]
     internal class Editor : MonoBehaviour
     {
         public static GameObject editor_ui;
@@ -22,19 +21,23 @@ namespace CustomMissionUtility
         public static GameObject EDITOR_UI;
         public static List<GameObject> SELECTED_OBJECTS;
         public static UnitInfoBox INFO_BOX;
-        public static TMP_Dropdown DROPDOWN;
 
         public static string selected_type = "UNIT"; 
 
-        [JsonProperty]
-        public static AllWaypointGroups ALL_WAYPOINT_GROUPS;
+        public static Dictionary<int, EditorUnit> Units;
 
         [JsonProperty]
-        public static AllVehicles ALL_VEHICLES;
+        public List<EditorUnit> UnitsSerialized;
+
+        [JsonProperty]
+        public int UnitCurrentId; 
 
         void Update() {
             if (!CameraManager.Instance.CameraFollow.IsInFreeFlyMode) return;
 
+            if (Input.GetKeyDown(KeyCode.U)) Save();
+            if (Input.GetKeyDown(KeyCode.H)) Load();
+            
             if (Input.GetMouseButtonDown(1)) {
                 CameraManager.Instance.CameraFollow.enabled = !CameraManager.Instance.CameraFollow.enabled;
                 if (!Cursor.visible)
@@ -49,7 +52,7 @@ namespace CustomMissionUtility
                 }
             }
 
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && Cursor.lockState != CursorLockMode.None)
             {
                 var cam_follow = CameraManager.Instance.CameraFollow;
 
@@ -68,7 +71,7 @@ namespace CustomMissionUtility
                 ClearUnitSelection();
             }
 
-            if (Input.GetKeyDown(KeyCode.V)) {
+            if (Input.GetKeyDown(KeyCode.V) && Cursor.lockState != CursorLockMode.None) {
                 var cam_follow = CameraManager.Instance.CameraFollow;
 
                 Ray ray = new Ray(cam_follow.BufferedCamera.transform.position, cam_follow.CurrentAimVector);
@@ -85,28 +88,18 @@ namespace CustomMissionUtility
                         raycastHit.point + new Vector3(0f, 1f, 0f), 
                         new Vector3(0f, cam_follow.transform.eulerAngles.y, 0f));
 
-                    SingleUnitSelected(unit);                    
+                    SingleUnitSelected(unit);
                 }
             }
-
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                Save();
-            }
-
-            if (Input.GetKeyDown(KeyCode.H)) {
-                Load();      
-            }
         }
+
         void Awake()
         {
             EDITOR_UI = GameObject.Instantiate(editor_ui);
             ALL_UNITS_HOLDER = new GameObject("EDITOR UNITS");
             SELECTED_OBJECTS = new List<GameObject>() { };
             INFO_BOX = EDITOR_UI.GetComponentInChildren<UnitInfoBox>();
-            ALL_WAYPOINT_GROUPS = new AllWaypointGroups();
-            ALL_VEHICLES = new AllVehicles();
-            DROPDOWN = EDITOR_UI.transform.Find("Info/Dropdown").GetComponent<TMP_Dropdown>();
+            Units = new Dictionary<int, EditorUnit> { };
         }
 
         GameObject CreateUnit(Vector3 pos, Vector3 rot)
@@ -118,7 +111,7 @@ namespace CustomMissionUtility
             EditorUnit e = unit.AddComponent<EditorUnit>();
             e.id = EditorUnit.CurrentId;
             e.Init();
-            ALL_VEHICLES.Units.Add(e.id, e);
+            Units.Add(e.id, e);
             EditorUnit.CurrentId += 1; 
             return unit;
         }
@@ -132,40 +125,41 @@ namespace CustomMissionUtility
             EditorUnit e = unit.AddComponent<EditorUnit>();
             e.id = id;
             e.Init();
-            ALL_VEHICLES.Units.Add(e.id, e);
+            Units.Add(e.id, e);
 
             return unit;
         }
 
         void DeleteUnit(GameObject unit) {
             EditorUnit eu = unit.GetComponent<EditorUnit>();
-            ALL_VEHICLES.Units.Remove(eu.id);
+            Units.Remove(eu.id);
             eu.Remove();
             GameObject.Destroy(unit);
             ClearUnitSelection();
         }
 
-        void SingleUnitSelected(GameObject unit)
+        public static void SingleUnitSelected(GameObject unit)
         {
             SELECTED_OBJECTS.Clear();
             SELECTED_OBJECTS.Add(unit);
-            DROPDOWN.value = unit.GetComponent<EditorUnit>().id + 1;
+            INFO_BOX.dropdown.value = (int)(unit.GetComponent<EditorUnit>().vehicle);
+            INFO_BOX.dropdown.interactable = true;
             INFO_BOX.UpdateInfo();
         }
 
         void ClearUnitSelection()
         {
+            INFO_BOX.dropdown.interactable = false;
             SELECTED_OBJECTS.Clear();
             INFO_BOX.UpdateInfo();
-            DROPDOWN.value = 0;
         }
 
         void Save() {
-            ALL_VEHICLES.Serialize();
+            Serialize();
 
-            string json = JsonConvert.SerializeObject(ALL_VEHICLES, new JsonSerializerSettings()
+            string json = JsonConvert.SerializeObject(this, new JsonSerializerSettings()
             {
-                Formatting = Formatting.Indented,
+                Formatting = Formatting.Indented, // replace later
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             });
 
@@ -174,21 +168,41 @@ namespace CustomMissionUtility
 
         void Load() {
             ClearUnitSelection();
-            ALL_VEHICLES.Clear();
+            Clear();
 
             string json = File.ReadAllText(MelonEnvironment.ModsDirectory + "/WeaponDataFile.json");
-            AllVehicles c = JsonConvert.DeserializeObject<AllVehicles>(json);
-            ALL_VEHICLES = c;
-            foreach (EditorUnit eu in ALL_VEHICLES.UnitsSerialized)
+            Editor c = JsonConvert.DeserializeObject<Editor>(json);
+            UnitsSerialized = c.UnitsSerialized;
+            foreach (EditorUnit eu in UnitsSerialized)
             {
                 CreateUnit((Vector3)eu.pos, (Vector3)eu.rot, eu.id);
             }
 
-            EditorUnit.CurrentId = ALL_VEHICLES.UnitsSerialized.Last().id + 1; 
+            EditorUnit.CurrentId = UnitsSerialized.Last().id + 1; 
         }
 
         void Teleport(Vector3 pos) { 
             
+        }
+        public void Serialize()
+        {
+            UnitCurrentId = EditorUnit.CurrentId;
+            UnitsSerialized = Units.Select(u => u.Value).ToList();
+            foreach (EditorUnit u in UnitsSerialized)
+            {
+                u.Serialize();
+            }
+        }
+
+        public void Clear()
+        {
+            foreach (EditorUnit eu in Units.Values)
+            {
+                eu.Remove();
+            }
+
+            Units.Clear();
+            UnitsSerialized.Clear();
         }
 
         public static void LoadAssets() {
@@ -223,8 +237,10 @@ namespace CustomMissionUtility
 
             TMP_Dropdown dropdown = editor_ui.transform.Find("Info/Dropdown").GetComponent<TMP_Dropdown>();
             var options = References.VicGameIds.ToList();
-            options.Insert(0, "");
             dropdown.AddOptions(options);
+
+            TMP_Dropdown dropdown_spawner = editor_ui.transform.Find("UnitSpawner/Panel/Dropdown").GetComponent<TMP_Dropdown>();
+            dropdown_spawner.AddOptions(options);
         }
     }
 }

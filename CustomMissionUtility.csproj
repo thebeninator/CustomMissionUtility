@@ -88,8 +88,10 @@
     <Compile Include="CustomMissionData.cs" />
     <Compile Include="Editor\CollapsibleButton.cs" />
     <Compile Include="Editor\Editor.cs" />
+    <Compile Include="Editor\EditorPlatoon.cs" />
     <Compile Include="Editor\EditorWaypoint.cs" />
     <Compile Include="Editor\EditorUnit.cs" />
+    <Compile Include="Editor\Loader.cs" />
     <Compile Include="Editor\UnitInfoBox.cs" />
     <Compile Include="Editor\Vec3InputHandler.cs" />
     <Compile Include="Editor\Vec3Lite.cs" />
