@@ -6,6 +6,7 @@ using MelonLoader.Utils;
 using System.IO;
 using TMPro;
 using System.Linq;
+using MelonLoader;
 
 // this is really bad code lol 
 namespace CustomMissionUtility
@@ -13,24 +14,68 @@ namespace CustomMissionUtility
     [JsonObject(MemberSerialization.OptIn)]
     internal class Editor : MonoBehaviour
     {
+        internal static string[] VicGameIdsEditor = new string[] {
+            "BMP1",
+            "BMP1 Soviet",
+            "BMP1P",
+            "BMP1P Soviet",
+            "BMP2",
+            "BMP2 Soviet",
+            "BRDM2",
+            "BRDM2 Soviet",
+            "BTR60PB",
+            "BTR60PB Soviet",
+            "9K111",
+            "9K111 Soviet",
+            "Ural",
+            "Ural Soviet",
+            "T62",
+            "T64A",
+            "T64B",
+            "T80B",
+            "BTR70",
+            "UAZ469",
+            "T55A",
+            "T72M",
+            "T72M Gill",
+            "T72M1",
+            "PT76B",
+            "M1",
+            "M1IP",
+            "M60A1",
+            "M60A3",
+            "M2 Bradley",
+            "M113",
+            "M923",
+            "TOW",
+            "T-34-85",
+            "T54A"
+        };
+
         public static GameObject editor_ui;
         public static GameObject unit_placeholder;
-        public static GameObject unit_selectable;
+        public static GameObject selectable;
 
         public static GameObject ALL_UNITS_HOLDER;
         public static GameObject EDITOR_UI;
         public static List<GameObject> SELECTED_OBJECTS;
         public static UnitInfoBox INFO_BOX;
 
-        public static string selected_type = "UNIT"; 
-
         public static Dictionary<int, EditorUnit> Units;
+        public static Dictionary<int, EditorPlatoon> Platoons;
+        public static References.Vehicles spawner_current_vehicle; 
 
         [JsonProperty]
         public List<EditorUnit> UnitsSerialized;
 
         [JsonProperty]
-        public int UnitCurrentId; 
+        public List<EditorPlatoon> PlatoonsSerialized;
+
+        [JsonProperty]
+        public int UnitCurrentId;
+
+        [JsonProperty]
+        public int PlatoonCurrentId;
 
         void Update() {
             if (!CameraManager.Instance.CameraFollow.IsInFreeFlyMode) return;
@@ -80,11 +125,11 @@ namespace CustomMissionUtility
                 if (Physics.Raycast(ray, out raycastHit, 4000f))
                 {
                     if (raycastHit.collider.gameObject.name.Contains("UNIT PLACEHOLDER")) {
-                        DeleteUnit(raycastHit.collider.gameObject);
+                        EditorTools.DeleteUnit(raycastHit.collider.gameObject);
                         return;
                     }
 
-                    GameObject unit = CreateUnit(
+                    GameObject unit = EditorTools.CreateUnit(
                         raycastHit.point + new Vector3(0f, 1f, 0f), 
                         new Vector3(0f, cam_follow.transform.eulerAngles.y, 0f));
 
@@ -100,42 +145,12 @@ namespace CustomMissionUtility
             SELECTED_OBJECTS = new List<GameObject>() { };
             INFO_BOX = EDITOR_UI.GetComponentInChildren<UnitInfoBox>();
             Units = new Dictionary<int, EditorUnit> { };
-        }
+            spawner_current_vehicle = 0;
 
-        GameObject CreateUnit(Vector3 pos, Vector3 rot)
-        {
-            GameObject unit = GameObject.Instantiate(unit_placeholder, ALL_UNITS_HOLDER.transform);
-            unit.transform.position = pos;
-            unit.transform.eulerAngles = rot;
-
-            EditorUnit e = unit.AddComponent<EditorUnit>();
-            e.id = EditorUnit.CurrentId;
-            e.Init();
-            Units.Add(e.id, e);
-            EditorUnit.CurrentId += 1; 
-            return unit;
-        }
-
-        GameObject CreateUnit(Vector3 pos, Vector3 rot, int id)
-        {
-            GameObject unit = GameObject.Instantiate(unit_placeholder, ALL_UNITS_HOLDER.transform);
-            unit.transform.position = pos;
-            unit.transform.eulerAngles = rot;
-
-            EditorUnit e = unit.AddComponent<EditorUnit>();
-            e.id = id;
-            e.Init();
-            Units.Add(e.id, e);
-
-            return unit;
-        }
-
-        void DeleteUnit(GameObject unit) {
-            EditorUnit eu = unit.GetComponent<EditorUnit>();
-            Units.Remove(eu.id);
-            eu.Remove();
-            GameObject.Destroy(unit);
-            ClearUnitSelection();
+            EDITOR_UI.transform.Find("UnitSpawner/Panel/Dropdown").GetComponent<TMP_Dropdown>().onValueChanged.AddListener(delegate (int i) {
+                MelonLogger.Msg(i);
+                spawner_current_vehicle = (References.Vehicles)i;
+            });
         }
 
         public static void SingleUnitSelected(GameObject unit)
@@ -147,7 +162,7 @@ namespace CustomMissionUtility
             INFO_BOX.UpdateInfo();
         }
 
-        void ClearUnitSelection()
+        public static void ClearUnitSelection()
         {
             INFO_BOX.dropdown.interactable = false;
             SELECTED_OBJECTS.Clear();
@@ -163,27 +178,24 @@ namespace CustomMissionUtility
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             });
 
-            File.WriteAllText(MelonEnvironment.ModsDirectory + "/WeaponDataFile.json", json);
+            File.WriteAllText(MelonEnvironment.ModsDirectory + "/mission.json", json);
         }
 
         void Load() {
             ClearUnitSelection();
             Clear();
 
-            string json = File.ReadAllText(MelonEnvironment.ModsDirectory + "/WeaponDataFile.json");
+            string json = File.ReadAllText(MelonEnvironment.ModsDirectory + "/mission.json");
             Editor c = JsonConvert.DeserializeObject<Editor>(json);
             UnitsSerialized = c.UnitsSerialized;
             foreach (EditorUnit eu in UnitsSerialized)
             {
-                CreateUnit((Vector3)eu.pos, (Vector3)eu.rot, eu.id);
+                EditorTools.CreateUnit((Vector3)eu.pos, (Vector3)eu.rot, eu.id);
             }
 
             EditorUnit.CurrentId = UnitsSerialized.Last().id + 1; 
         }
 
-        void Teleport(Vector3 pos) { 
-            
-        }
         public void Serialize()
         {
             UnitCurrentId = EditorUnit.CurrentId;
@@ -213,8 +225,8 @@ namespace CustomMissionUtility
             editor_ui = mission_creator_assets.LoadAsset<GameObject>("EditorUI.prefab");
             editor_ui.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-            unit_selectable = mission_creator_assets.LoadAsset<GameObject>("UnitSelectable.prefab");
-            unit_selectable.hideFlags = HideFlags.DontUnloadUnusedAsset;
+            selectable = mission_creator_assets.LoadAsset<GameObject>("UnitSelectable.prefab");
+            selectable.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
             CollapsibleButton waypoints_collapse = editor_ui.transform.Find("WaypointsRoot/Waypoints/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
             waypoints_collapse.collapsible = editor_ui.transform.Find("WaypointsRoot/Waypoints/WaypointsList").gameObject;
@@ -228,6 +240,12 @@ namespace CustomMissionUtility
             Draggable units_drag = editor_ui.transform.Find("UnitsRoot/Units/Header").gameObject.AddComponent<Draggable>();
             units_drag.parent = editor_ui.transform.Find("UnitsRoot");
 
+            CollapsibleButton plts_collapse = editor_ui.transform.Find("PltsRoot/Plts/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
+            plts_collapse.collapsible = editor_ui.transform.Find("PltsRoot/Plts/PltsList").gameObject;
+            plts_collapse.collapse_icon = editor_ui.transform.Find("PltsRoot/Plts/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
+            Draggable plts_drag = editor_ui.transform.Find("PltsRoot/Plts/Header").gameObject.AddComponent<Draggable>();
+            plts_drag.parent = editor_ui.transform.Find("PltsRoot");
+
             Draggable info_drag = editor_ui.transform.Find("Info/Panel").gameObject.AddComponent<Draggable>();
             info_drag.parent = editor_ui.transform.Find("Info");
 
@@ -236,7 +254,7 @@ namespace CustomMissionUtility
             editor_ui.transform.Find("Info").gameObject.AddComponent<UnitInfoBox>();
 
             TMP_Dropdown dropdown = editor_ui.transform.Find("Info/Dropdown").GetComponent<TMP_Dropdown>();
-            var options = References.VicGameIds.ToList();
+            var options = Editor.VicGameIdsEditor.ToList();
             dropdown.AddOptions(options);
 
             TMP_Dropdown dropdown_spawner = editor_ui.transform.Find("UnitSpawner/Panel/Dropdown").GetComponent<TMP_Dropdown>();

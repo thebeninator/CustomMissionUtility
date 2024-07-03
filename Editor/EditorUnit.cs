@@ -28,8 +28,8 @@ namespace CustomMissionUtility
         public Vec3Lite rot;
 
         public void Init() {
-            selectable = GameObject.Instantiate(Editor.unit_selectable);
-            selectable.GetComponentInChildren<TextMeshProUGUI>().text = References.GetVehicle(vehicle).name + " (" + id + ")";
+            selectable = GameObject.Instantiate(Editor.selectable);
+            selectable.GetComponentInChildren<TextMeshProUGUI>().text = Editor.VicGameIdsEditor[(int)vehicle] + " (" + id + ")";
             selectable.transform.SetParent(Editor.EDITOR_UI.transform.Find("UnitsRoot/Units/UnitsList/Viewport/Content"), false);
             selectable.GetComponentInChildren<Button>().onClick.AddListener(delegate ()
             {
@@ -38,7 +38,7 @@ namespace CustomMissionUtility
         }
 
         public void UpdateName() {
-            selectable.GetComponentInChildren<TextMeshProUGUI>().text = References.GetVehicle(vehicle).name + " (" + id + ")";
+            selectable.GetComponentInChildren<TextMeshProUGUI>().text = Editor.VicGameIdsEditor[(int)vehicle] + " (" + id + ")";
         }
 
         public void Remove() {
@@ -50,9 +50,9 @@ namespace CustomMissionUtility
             GameObject.Destroy(transform.gameObject);
         }
 
-        public void Serialize() { 
-            pos = new Vec3Lite(transform.position.x, transform.position.y, transform.position.z);
-            rot = new Vec3Lite(transform.eulerAngles.x,  transform.eulerAngles.y, transform.eulerAngles.z);
+        public void Serialize() {
+            pos = (Vec3Lite)transform.position;
+            rot = (Vec3Lite)transform.eulerAngles;
         }
     }
 }

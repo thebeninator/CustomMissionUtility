@@ -12,8 +12,6 @@ using System.IO;
 using System.Reflection;
 using HarmonyLib;
 using GHPC.State;
-using Newtonsoft.Json;
-using TMPro;
 
 [assembly: MelonInfo(typeof(CustomMissionUtility.CustomMissionUtility), "Custom Mission Utility", "1.0.0", "ATLAS")]
 [assembly: MelonGame("Radian Simulations LLC", "GHPC")]
@@ -68,9 +66,9 @@ namespace CustomMissionUtility
                 foreach (Type type in types)
                 {
                     if (type.IsSubclassOf(typeof(CustomMission))) {
-                        object mission = Activator.CreateInstance(type);
-                        custom_mission_lookup.Add((mission as CustomMission).MissionData.Id, all_custom_missions.Count());
-                        all_custom_missions.Add(mission as CustomMission);
+                        CustomMission mission = Activator.CreateInstance(type) as CustomMission;
+                        custom_mission_lookup.Add(mission.MissionData.Id, all_custom_missions.Count());
+                        all_custom_missions.Add(mission);
                     };                
                 }
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GHPC.Vehicle;
 using MelonLoader;
 using TMPro;
 using UnityEngine;
@@ -51,7 +52,7 @@ namespace CustomMissionUtility
             }
 
             EditorUnit unit = Editor.SELECTED_OBJECTS[0].GetComponent<EditorUnit>();
-            SetUnitName(References.GetVehicle(unit.vehicle).name + " (" + unit.id + ")");
+            SetUnitName(Editor.VicGameIdsEditor[(int)unit.vehicle] + " (" + unit.id + ")");
             position.UpdateVec(Editor.SELECTED_OBJECTS[0].transform.position);
             rotation.UpdateVec(Editor.SELECTED_OBJECTS[0].transform.eulerAngles);
         }
