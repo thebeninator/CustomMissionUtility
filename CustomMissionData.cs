@@ -1,4 +1,6 @@
-﻿using GHPC.Mission;
+﻿using System.Collections.Generic;
+using GHPC;
+using GHPC.Mission;
 
 namespace CustomMissionUtility
 {
@@ -20,21 +22,17 @@ namespace CustomMissionUtility
         public RandomEnvironment.EnvSettingOption[] TimeOptions;
 
         /// <summary>
-        /// A value from 0.0 to 1.0 that affects the weather conditions
+        /// A value from 0.0 to 1.0 that affects weather conditions
         /// 0.0 = always clear skies
         /// 1.0 = always cloudy/rainy
         /// </summary>
         public float CloudBias; 
 
         /// <summary>
-        /// Can the player play as NATO?
+        /// What factions can the player play as? First faction in the array will be the one that is initally selected
+        /// "BluFor", "RedFor" 
         /// </summary>
-        public bool BluFor = false;
-
-        /// <summary>
-        /// Can the player play as Pact?
-        /// </summary>
-        public bool RedFor = false;
+        public Faction[] PlayableFactions;
 
         /// <summary>
         /// Mission description when NATO is picked

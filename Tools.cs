@@ -22,7 +22,7 @@ namespace CustomMissionUtility
 
             for (int i = 0; i < waypoints.Length; i++) {
                 GameObject waypoint = new GameObject(i.ToString());
-                TransformWaypoint t_waypoint = waypoint.AddComponent<TransformWaypoint>();
+                waypoint.AddComponent<TransformWaypoint>();
                 waypoint.transform.parent = waypoint_holder_go.transform;
                 waypoint.transform.position = waypoints[i];
             }
@@ -54,7 +54,7 @@ namespace CustomMissionUtility
             GameObject platoon_go = new GameObject(name);
 
             PlatoonData data = platoon_go.AddComponent<PlatoonData>();
-
+            
             data.Name = name;
             data.Units = ((Unit[])units).ToList();
             foreach (Vehicle unit in units) {
