@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using GHPC.Camera;
+using GHPC.Vehicle;
+using MelonLoader;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -91,23 +93,53 @@ namespace CustomMissionUtility
                 eu.go_text.color = Color.blue; 
             }
 
+            if (eu.faction != References.GetVehicle(eu.vehicle).GetComponent<Vehicle>().Allegiance) { 
+                eu.has_faction_override = true;
+                eu.faction_override = eu.faction;
+            }
+
             Editor.Units.Add(eu.id, eu);
             EditorUnit.CurrentId += 1;
             eu.AddToPlatoon();
             return unit;
         }
 
-        public static GameObject CreateUnit(Vector3 pos, Vector3 rot, int id, bool in_platoon = false)
+        public static GameObject CreateUnit(EditorUnit eu, EditorPlatoon plt = null)
         {
             GameObject unit = GameObject.Instantiate(Editor.unit_placeholder, Editor.ALL_UNITS_HOLDER.transform);
-            unit.transform.position = pos;
-            unit.transform.eulerAngles = rot;
+            unit.transform.position = (Vector3)eu.pos;
+            unit.transform.eulerAngles = (Vector3)eu.rot;
 
             EditorUnit e = unit.AddComponent<EditorUnit>();
-            e.id = id;
+            e.id = eu.id;
+            e.starting_unit = eu.starting_unit;
+            e.playable_unit = eu.playable_unit;
+            e.vehicle = eu.vehicle;
+            e.faction = eu.faction;
+            e.waypoints = eu.waypoints;
+            e.go = unit;
+            e.go_text = unit.GetComponentInChildren<TMP_Text>();
+            e.go_text.text = Editor.VicGameIdsEditor[(int)e.vehicle] + " (" + e.id + ")";
+
+            if (plt != null)
+                e.platoon = plt;
             e.Init();
-            if (!in_platoon)
-                Editor.Units.Add(e.id, e);
+
+            if (e.faction == GHPC.Faction.Blue)
+            {
+                SwitchMat(unit.GetComponentInChildren<MeshRenderer>(), Editor.mat_blue, 0);
+                e.go_text.color = Color.blue;
+            }
+
+            if (e.faction != References.GetVehicle(e.vehicle).GetComponent<Vehicle>().Allegiance)
+            {
+                e.has_faction_override = true;
+                e.faction_override = e.faction;
+            }
+
+            Editor.Units.Add(e.id, e);
+            if (plt != null)
+                e.AddToPlatoon();
 
             return unit;
         }
@@ -115,8 +147,9 @@ namespace CustomMissionUtility
         public static void DeleteUnit(GameObject unit)
         {
             EditorUnit eu = unit.GetComponent<EditorUnit>();
-            Editor.Units.Remove(eu.id);
+            eu.RemoveFromPlatoon(force_remove: true);
             eu.Remove();
+            Editor.Units.Remove(eu.id);
             GameObject.Destroy(unit);
             Editor.ClearUnitSelection();
         }
@@ -128,9 +161,11 @@ namespace CustomMissionUtility
         }
 
         public static void SwitchMat(MeshRenderer mesh_rend, Material mat, int idx) {
+            MelonLogger.Msg("called: " + idx + " " + mat.name);
+
             Material[] new_mats = mesh_rend.materials;
             new_mats[idx] = mat;
             mesh_rend.materials = new_mats;
-       }
+        }
     }
 }

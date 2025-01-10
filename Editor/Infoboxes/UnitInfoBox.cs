@@ -20,6 +20,7 @@ namespace CustomMissionUtility
         public Vec3FieldHandler rotation;
         TextMeshProUGUI unit_name_text;
         Toggle spawn_active;
+        Toggle starting_unit;
         Button teleport;
         Button delete;
         public TMP_Dropdown dropdown;
@@ -39,11 +40,12 @@ namespace CustomMissionUtility
             platoon = transform.Find("Contents/DropdownPlt").GetComponent<TMP_Dropdown>();
             waypoints = transform.Find("Contents/DropdownWaypoints").GetComponent<TMP_Dropdown>();
             spawn_active = transform.Find("Contents/SpawnActive").GetComponent<Toggle>();
+            starting_unit = transform.Find("Contents/StartingUnit").GetComponent<Toggle>();
 
             dropdown.onValueChanged.AddListener(delegate(int i) {
                 EditorUnit selected = Editor.SELECTED_UNITS[0].GetComponent<EditorUnit>();
                 selected.vehicle = (References.Vehicles)i;
-                selected.faction = References.GetVehicle(selected.vehicle).GetComponent<Vehicle>().Allegiance;
+                selected.faction = selected.has_faction_override ? selected.faction_override : References.GetVehicle(selected.vehicle).GetComponent<Vehicle>().Allegiance;
                 selected.go_text.color = selected.faction == GHPC.Faction.Red ? Color.red : Color.blue;
                 EditorTools.SwitchMat(selected.go.GetComponentInChildren<MeshRenderer>(), selected.faction == GHPC.Faction.Red ? Editor.mat_red : Editor.mat_blue, 0);
                 selected.UpdateName();
@@ -65,17 +67,24 @@ namespace CustomMissionUtility
                 selected.spawn_active = b;
             });
 
+            starting_unit.onValueChanged.AddListener(delegate (bool b) {
+                EditorUnit selected = Editor.SELECTED_UNITS[0].GetComponent<EditorUnit>();
+                selected.starting_unit = b;
+                selected.selectable.transform.Find("player").gameObject.SetActive(b);
+            });
+
             platoon.onValueChanged.AddListener(delegate (int i)
             {
                 EditorUnit eu = Editor.SELECTED_UNITS[0].GetComponent<EditorUnit>();
+
                 if (i == 0)
                 {
-                    eu.RemoveFromPlatoon(true);
+                    eu.RemoveFromPlatoon(add_back_to_units: true, force_remove: true);
                     eu.platoon = null;
                     Editor.PLATOON_INFO_BOX.UpdateInfo();
                     return;
                 }
-                eu.RemoveFromPlatoon();
+                eu.RemoveFromPlatoon(force_remove: true);
                 eu.platoon = Editor.PLATOONS_SELECTABLE_LIST.GetChild(i - 1).GetComponent<PltSelectable>().epl;
                 eu.AddToPlatoon();
                 Editor.PLATOON_INFO_BOX.UpdateInfo();
@@ -86,11 +95,11 @@ namespace CustomMissionUtility
                 EditorUnit eu = Editor.SELECTED_UNITS[0].GetComponent<EditorUnit>();
 
                 if (i == 0) {
-                    eu.waypoints = null;
+                    eu.waypoints = -1;
                     return;
                 }
 
-                eu.waypoints = Editor.WAYPOINT_GROUPS_SELECTABLE_LIST.GetChild(i - 1).GetComponent<WPGSelectable>().group;
+                eu.waypoints = Editor.WAYPOINT_GROUPS_SELECTABLE_LIST.GetChild(i - 1).GetComponent<WPGSelectable>().group.id;
             });
         }
 
@@ -130,6 +139,7 @@ namespace CustomMissionUtility
             teleport.interactable = active;
             platoon.interactable = active;
             spawn_active.interactable = active;
+            starting_unit.interactable = active;
             waypoints.interactable = active;
             position.SetActive(active);
             rotation.SetActive(active);
@@ -153,6 +163,7 @@ namespace CustomMissionUtility
             position.UpdateVec(Editor.SELECTED_UNITS[0].transform.position);
             rotation.UpdateVec(Editor.SELECTED_UNITS[0].transform.eulerAngles);
             spawn_active.isOn = unit.spawn_active;
+            starting_unit.isOn = unit.starting_unit;
 
             if (Editor.spawner_current_platoon != null)
             {
@@ -171,9 +182,9 @@ namespace CustomMissionUtility
                 platoon.value = 0;
             };
 
-            if (unit.waypoints != null)
+            if (unit.waypoints != -1)
             {
-                waypoints.value = waypoints_options.FindIndex(o => o == unit.waypoints.name + " (" + unit.waypoints.id + ")");
+                waypoints.value = waypoints_options.FindIndex(o => o == Editor.WaypointGroups[unit.waypoints].name + " (" + unit.waypoints + ")");
             }
             else
             {

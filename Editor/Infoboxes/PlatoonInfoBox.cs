@@ -55,6 +55,7 @@ namespace CustomMissionUtility
 
             delete.onClick.AddListener(delegate ()
             {
+                Editor.Platoons.Remove(Editor.SELECTED_PLATOONS[0].id);
                 Editor.SELECTED_PLATOONS[0].Remove();
             });
 
@@ -70,11 +71,11 @@ namespace CustomMissionUtility
 
                 if (i == 0)
                 {
-                    plt.waypoints = null;
+                    plt.waypoints = -1;
                     return;
                 }
 
-                plt.waypoints = Editor.WAYPOINT_GROUPS_SELECTABLE_LIST.GetChild(i - 1).GetComponent<WPGSelectable>().group;
+                plt.waypoints = Editor.WAYPOINT_GROUPS_SELECTABLE_LIST.GetChild(i - 1).GetComponent<WPGSelectable>().group.id;
             });
 
             name_field.interactable = false;
@@ -152,9 +153,9 @@ namespace CustomMissionUtility
                 unit.CreateSelectable(units_list, true);
             }
 
-            if (platoon.waypoints != null)
+            if (platoon.waypoints != -1)
             {
-                waypoints_dropdown.value = waypoints_options.FindIndex(o => o == platoon.waypoints.name + " (" + platoon.waypoints.id + ")");
+                waypoints_dropdown.value = waypoints_options.FindIndex(o => o == Editor.WaypointGroups[platoon.waypoints].name + " (" + platoon.waypoints + ")");
             }
             else
             {

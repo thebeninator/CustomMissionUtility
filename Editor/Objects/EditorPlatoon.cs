@@ -44,7 +44,7 @@ namespace CustomMissionUtility
         public FormationType formation = FormationType.None;
 
         [JsonProperty]
-        public EditorWaypointGroup waypoints; 
+        public int waypoints = -1; 
 
         public void Init()
         {
@@ -76,7 +76,14 @@ namespace CustomMissionUtility
             }
 
             GameObject.Destroy(selectable);
-            Editor.Platoons.Remove(id);
+            //Editor.Platoons.Remove(id);
+
+            foreach (EditorUnit eu in Units) {
+                eu.RemoveFromPlatoon(add_back_to_units: true);
+            }
+
+            Units.Clear();
+
             Editor.SELECTED_PLATOONS.Clear();
             Editor.INFO_BOX.PopulatePlatoonOptions();
             Editor.INFO_BOX.UpdateInfo();

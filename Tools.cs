@@ -37,7 +37,7 @@ namespace CustomMissionUtility
         /// </summary>
         public static void SetStartingUnit(Unit unit, Faction faction)
         {
-            CustomMissionUtility.MissionMeta._startingUnits = Util.AppendToArray(CustomMissionUtility.MissionMeta._startingUnits,
+            CMU.MissionMeta._startingUnits = Util.AppendToArray(CMU.MissionMeta._startingUnits,
                 new MissionSceneMeta.StartingUnitData()
                 {
                     Allegiance = faction,

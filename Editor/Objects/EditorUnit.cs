@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BehaviorDesigner.Runtime.Tasks;
 using GHPC;
 using GHPC.Vehicle;
 using Newtonsoft.Json;
@@ -21,14 +22,12 @@ namespace CustomMissionUtility
 
         public EditorPlatoon platoon;
 
-        public Faction faction;
-
         public GameObject go;
 
         public TMP_Text go_text;
 
         [JsonProperty]
-        public EditorWaypointGroup waypoints;
+        public int waypoints = -1;
 
         [JsonProperty]
         public References.Vehicles vehicle = 0;
@@ -44,6 +43,21 @@ namespace CustomMissionUtility
 
         [JsonProperty]
         public bool spawn_active = true;
+
+        [JsonProperty]
+        public Faction faction;
+
+        [JsonProperty]
+        public Faction faction_override;
+
+        [JsonProperty]
+        public bool has_faction_override = false;
+
+        [JsonProperty]
+        public bool starting_unit = false;
+
+        [JsonProperty]
+        public bool playable_unit = true;
 
         public void CreateSelectable(Transform list, bool platoon = false) {
             GameObject s = GameObject.Instantiate(Editor.selectable);
@@ -67,6 +81,8 @@ namespace CustomMissionUtility
             else {
                 selectable = s;
             }
+
+            s.transform.Find("player").gameObject.SetActive(starting_unit);
         }
 
         public void Init() {
@@ -91,12 +107,14 @@ namespace CustomMissionUtility
             platoon.Units.Add(this);
             Editor.PLATOON_INFO_BOX.UpdateInfo();
         }
-        public void RemoveFromPlatoon(bool add_back_to_units = false)
+        public void RemoveFromPlatoon(bool add_back_to_units = false, bool force_remove = false)
         {
             if (platoon == null) return;
             if (add_back_to_units)
                 Editor.Units.Add(id, this);
-            platoon.Units.Remove(this);
+            if (force_remove)
+                platoon.Units.Remove(this);
+            platoon = null;
             Editor.PLATOON_INFO_BOX.UpdateInfo();
         }
 

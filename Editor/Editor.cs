@@ -34,6 +34,7 @@ namespace CustomMissionUtility
             "SPG-9 Soviet",
             "Ural NVA",
             "Ural Soviet",
+            "T-62",
             "T-64R",
             "T-64A (1974)",
             "T-64A (1979)",
@@ -94,7 +95,7 @@ namespace CustomMissionUtility
 
         public static GameObject editor_ui;
         public static GameObject unit_placeholder;
-        public static GameObject waypoint_placeholder; 
+        public static GameObject waypoint_placeholder;
         public static GameObject selectable;
         public static Material mat_blue;
         public static Material mat_red;
@@ -126,7 +127,7 @@ namespace CustomMissionUtility
         public static EditorPlatoon spawner_current_platoon;
 
         public static SpawnerMode current_mode = SpawnerMode.Unit;
-        public static Faction unit_spawner_faction = Faction.Red; 
+        public static Faction unit_spawner_faction = Faction.Red;
 
         [JsonProperty]
         public List<EditorUnit> UnitsSerialized;
@@ -138,10 +139,90 @@ namespace CustomMissionUtility
         public List<EditorWaypointGroup> WaypointGroupsSerialized;
 
         [JsonProperty]
+        public List<References.Vehicles> SpawnOrdersBlue = new List<References.Vehicles>();
+
+        [JsonProperty]
+        public List<References.Vehicles> SpawnOrdersRed = new List<References.Vehicles>();
+
+        [JsonProperty]
         public int UnitCurrentId;
 
         [JsonProperty]
         public int PlatoonCurrentId;
+
+        [JsonProperty]
+        public int WaypointCurrentId;
+
+        List<References.Vehicles> GetSpawnOrderList(Faction faction)
+        {
+            return faction == Faction.Red ? SpawnOrdersRed : SpawnOrdersBlue;
+        }
+
+        void AddSpawnOrder(EditorUnit u) {
+            List<References.Vehicles> order_list = GetSpawnOrderList(u.faction);
+            if (!order_list.Contains(u.vehicle))
+            {
+                order_list.Add(u.vehicle);
+            }
+        }
+
+        public static void UpdateSpawnerFaction(Faction faction)
+        {
+            unit_spawner_faction = faction;
+            SPAWNER_FACTION.text = fac_to_string[unit_spawner_faction];
+            SPAWNER_FACTION.color = fac_to_colour[unit_spawner_faction];
+        }
+
+        public static void WaypointGroupSelected(EditorWaypointGroup group)
+        {
+            SELECTED_WAYPOINT_GROUPS.Clear();
+            SELECTED_WAYPOINT_GROUPS.Add(group);
+
+            foreach (EditorWaypoint wp in SELECTED_WAYPOINT_GROUPS[0].waypoints)
+            {
+                EditorTools.SwitchMat(wp.go.GetComponent<MeshRenderer>(), mat_waypoint_hi, 0);
+            }
+
+            WAYPOINT_GROUP_INFO_BOX.UpdateInfo();
+        }
+
+        public static void ClearWaypointGroupSelection()
+        {
+            foreach (EditorWaypoint wp in Editor.SELECTED_WAYPOINT_GROUPS[0].waypoints)
+            {
+                EditorTools.SwitchMat(wp.go.GetComponent<MeshRenderer>(), Editor.mat_waypoint_default, 0);
+            }
+
+            SELECTED_WAYPOINT_GROUPS.Clear();
+            WAYPOINT_GROUP_INFO_BOX.UpdateInfo();
+        }
+
+        public static void SingleUnitSelected(GameObject unit)
+        {
+            EditorUnit eu = unit.GetComponent<EditorUnit>();
+
+            if (SELECTED_UNITS.Count != 0)
+            {
+                EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_default, 1);
+            }
+
+            SELECTED_UNITS.Clear();
+            SELECTED_UNITS.Add(unit);
+            EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_selected, 1);
+            INFO_BOX.dropdown.value = (int)(eu.vehicle);
+            INFO_BOX.UpdateInfo();
+        }
+
+        public static void ClearUnitSelection()
+        {
+            if (SELECTED_UNITS.Count != 0)
+            {
+                EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_default, 1);
+            }
+
+            SELECTED_UNITS.Clear();
+            INFO_BOX.UpdateInfo();
+        }
 
         void Update() {
             if (!CameraManager.Instance.CameraFollow.IsInFreeFlyMode) return;
@@ -184,122 +265,14 @@ namespace CustomMissionUtility
                 current_mode = SpawnerMode.Waypoint;
             }
 
-            if (current_mode == SpawnerMode.Unit)
+            switch (current_mode) 
             {
-                UnitControlHandler();
-            }
-            else if (current_mode == SpawnerMode.Waypoint) {
-                WaypointControlHandler();
-            }
-        }
-
-        void WaypointControlHandler() {
-            if (Cursor.lockState == CursorLockMode.None) return;
-
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                EditorWaypointGroup group = EditorTools.CreateWaypointGroup();
-            }
-
-            if (Input.GetMouseButtonDown(0))
-            {
-                var cam_follow = CameraManager.Instance.CameraFollow;
-
-                Ray ray = new Ray(cam_follow.BufferedCamera.transform.position, cam_follow.CurrentAimVector);
-                RaycastHit raycastHit;
-
-                if (Physics.Raycast(ray, out raycastHit, 4000f))
-                {
-                    if (raycastHit.collider.gameObject.name.Contains("Waypoint"))
-                    {
-                        if (SELECTED_WAYPOINT_GROUPS.Count == 0 || SELECTED_WAYPOINT_GROUPS[0] != raycastHit.collider.gameObject.GetComponent<EditorWaypoint>().group)
-                            WaypointGroupSelected(raycastHit.collider.gameObject.GetComponent<EditorWaypoint>().group);
-                        return;
-                    }
-                }
-
-                ClearWaypointGroupSelection();
-            }
-
-            if (Input.GetKeyDown(KeyCode.V))
-            {
-                var cam_follow = CameraManager.Instance.CameraFollow;
-
-                Ray ray = new Ray(cam_follow.BufferedCamera.transform.position, cam_follow.CurrentAimVector);
-                RaycastHit raycastHit;
-
-                if (Physics.Raycast(ray, out raycastHit, 4000f))
-                {
-                    if (raycastHit.collider.gameObject.name.Contains("Waypoint"))
-                    {
-                        EditorTools.DeleteWaypoint(raycastHit.collider.gameObject);
-                        return;
-                    }
-
-                    EditorTools.CreateWaypoint(
-                        raycastHit.point + new Vector3(0f, 1f, 0f),
-                        new Vector3(0f, CameraManager._mainCamera.transform.eulerAngles.y, 0f));
-                }
-            }
-        }
-
-        void UnitControlHandler() {
-            if (Cursor.lockState == CursorLockMode.None) return;
-
-            if (Input.GetKeyDown(KeyCode.Z)) {
-                UpdateSpawnerFaction(Faction.Blue);
-            }
-
-            if (Input.GetKeyDown(KeyCode.X))
-            {
-                UpdateSpawnerFaction(Faction.Red);
-            }
-
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                UpdateSpawnerFaction(Faction.Neutral);
-            }
-
-            if (Input.GetMouseButtonDown(0))
-            {
-                var cam_follow = CameraManager.Instance.CameraFollow;
-
-                Ray ray = new Ray(cam_follow.BufferedCamera.transform.position, cam_follow.CurrentAimVector);
-                RaycastHit raycastHit;
-
-                if (Physics.Raycast(ray, out raycastHit, 4000f))
-                {
-                    if (raycastHit.collider.gameObject.name.Contains("UNIT RED"))
-                    {
-                        SingleUnitSelected(raycastHit.collider.gameObject);
-                        return;
-                    }
-                }
-
-                ClearUnitSelection();
-            }
-
-            if (Input.GetKeyDown(KeyCode.V))
-            {
-                var cam_follow = CameraManager.Instance.CameraFollow;
-
-                Ray ray = new Ray(cam_follow.BufferedCamera.transform.position, cam_follow.CurrentAimVector);
-                RaycastHit raycastHit;
-
-                if (Physics.Raycast(ray, out raycastHit, 4000f))
-                {
-                    if (raycastHit.collider.gameObject.name.Contains("UNIT RED"))
-                    {
-                        EditorTools.DeleteUnit(raycastHit.collider.gameObject);
-                        return;
-                    }
-
-                    GameObject unit = EditorTools.CreateUnit(
-                        raycastHit.point + new Vector3(0f, 1f, 0f),
-                        new Vector3(0f, CameraManager._mainCamera.transform.eulerAngles.y, 0f));
-
-                    SingleUnitSelected(unit);
-                }
+                case SpawnerMode.Unit: 
+                    EditorController.UnitControlHandler();
+                    break;
+                case SpawnerMode.Waypoint:
+                    EditorController.WaypointControlHandler();
+                    break;
             }
         }
 
@@ -386,60 +359,9 @@ namespace CustomMissionUtility
             CameraManager.Instance.CameraFollow.fovRange = new Vector2(0.1f, 135f);
         }
 
-        public static void UpdateSpawnerFaction(Faction faction) {
-            unit_spawner_faction = faction;
-            SPAWNER_FACTION.text = fac_to_string[unit_spawner_faction];
-            SPAWNER_FACTION.color = fac_to_colour[unit_spawner_faction];
-        }
-
-        public static void WaypointGroupSelected(EditorWaypointGroup group) {
-            SELECTED_WAYPOINT_GROUPS.Clear();
-            SELECTED_WAYPOINT_GROUPS.Add(group);
-
-            foreach (EditorWaypoint wp in SELECTED_WAYPOINT_GROUPS[0].waypoints) {
-                EditorTools.SwitchMat(wp.go.GetComponent<MeshRenderer>(), mat_waypoint_hi, 0);             
-            }
-
-            WAYPOINT_GROUP_INFO_BOX.UpdateInfo();
-        }
-
-        public static void ClearWaypointGroupSelection() {
-            foreach (EditorWaypoint wp in Editor.SELECTED_WAYPOINT_GROUPS[0].waypoints)
-            {
-                EditorTools.SwitchMat(wp.go.GetComponent<MeshRenderer>(), Editor.mat_waypoint_default, 0);
-            }
-
-            SELECTED_WAYPOINT_GROUPS.Clear();
-            WAYPOINT_GROUP_INFO_BOX.UpdateInfo();
-        }
-
-        public static void SingleUnitSelected(GameObject unit)
-        {
-            EditorUnit eu = unit.GetComponent<EditorUnit>();
-
-            if (SELECTED_UNITS.Count != 0)
-            {
-                EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_default, 1);
-            }
-
-            SELECTED_UNITS.Clear();
-            SELECTED_UNITS.Add(unit);
-            EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_selected, 1);
-            INFO_BOX.dropdown.value = (int)(eu.vehicle);
-            INFO_BOX.UpdateInfo();
-        }
-
-        public static void ClearUnitSelection()
-        {
-            if (SELECTED_UNITS.Count != 0) {
-                EditorTools.SwitchMat(SELECTED_UNITS[0].GetComponent<MeshRenderer>(), mat_default, 1);
-            }
-
-            SELECTED_UNITS.Clear();
-            INFO_BOX.UpdateInfo();
-        }
-
         void Save() {
+            MelonLogger.Msg("saved");
+
             UnitCurrentId = EditorUnit.CurrentId;
             PlatoonCurrentId = EditorPlatoon.CurrentId;
 
@@ -450,11 +372,13 @@ namespace CustomMissionUtility
             foreach (EditorUnit u in UnitsSerialized)
             {
                 u.Serialize();
+                AddSpawnOrder(u);
             }
 
             foreach (EditorPlatoon ep in PlatoonsSerialized) {
                 foreach (EditorUnit u in ep.Units) {
                     u.Serialize();
+                    AddSpawnOrder(u);
                 }
             }
 
@@ -462,32 +386,77 @@ namespace CustomMissionUtility
             {
                 foreach (EditorWaypoint w in wpg.waypoints)
                 {
-                    w.Serialize();
+                    w.Serialize();                 
                 }
             }
 
             string json = JsonConvert.SerializeObject(this, new JsonSerializerSettings()
             {
-                Formatting = Formatting.Indented, // replace later
+                Formatting = Formatting.Indented,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             });
 
             File.WriteAllText(MelonEnvironment.ModsDirectory + "/mission.json", json);
         }
 
-        void Load() {
+        void Load()
+        {
+            MelonLogger.Msg("loaded");
+
             ClearUnitSelection();
             Clear();
-
+          
             string json = File.ReadAllText(MelonEnvironment.ModsDirectory + "/mission.json");
             Editor c = JsonConvert.DeserializeObject<Editor>(json);
-            UnitsSerialized = c.UnitsSerialized;
-            foreach (EditorUnit eu in UnitsSerialized)
-            {
-                EditorTools.CreateUnit((Vector3)eu.pos, (Vector3)eu.rot, eu.id);
+
+            foreach (EditorWaypointGroup _wpg in c.WaypointGroupsSerialized) {
+                EditorWaypointGroup wpg = new EditorWaypointGroup();
+                wpg.id = _wpg.id;
+                wpg.name = _wpg.name;
+                wpg.CreateSelectable(Editor.EDITOR_UI.transform.Find("WaypointsRoot/Waypoints/WaypointsList/Viewport/Content"));
+                WaypointGroups.Add(wpg.id, wpg);
+
+                foreach (EditorWaypoint _wp in _wpg.waypoints) {
+                    GameObject waypoint = GameObject.Instantiate(waypoint_placeholder);
+                    waypoint.transform.position = (Vector3)_wp.pos;
+
+                    EditorWaypoint wp = waypoint.AddComponent<EditorWaypoint>();
+                    wp.group = wpg;
+                    wp.go = waypoint;
+                    wp.go_id = waypoint.transform.Find("Id").GetComponent<TMP_Text>();
+                    wp.go_group = waypoint.transform.Find("Group").GetComponent<TMP_Text>();
+
+                    wpg.waypoints.Add(wp);
+                }
             }
 
-            EditorUnit.CurrentId = UnitsSerialized.Last().id + 1; 
+            foreach (EditorUnit eu in c.UnitsSerialized)
+            {
+                EditorTools.CreateUnit(eu);
+            }
+
+            foreach (EditorPlatoon ep in c.PlatoonsSerialized) {
+                EditorPlatoon plt = new EditorPlatoon();
+                plt.name = ep.name;
+                plt.id = ep.id;
+                plt.tag = ep.tag;
+                plt.waypoints = ep.waypoints;
+                plt.formation = ep.formation;
+                plt.Init();
+                Platoons.Add(plt.id, plt);
+                
+                foreach (EditorUnit eu in ep.Units) {
+                    EditorTools.CreateUnit(eu, plt);
+                }            
+            }
+
+            PLATOON_INFO_BOX.PopulateWaypointOptions();
+            INFO_BOX.PopulatePlatoonOptions();
+            INFO_BOX.UpdateInfo();
+
+            EditorUnit.CurrentId = c.UnitCurrentId;
+            EditorPlatoon.CurrentId = c.PlatoonCurrentId;
+            EditorWaypointGroup.CurrentId = c.WaypointCurrentId;
         }
 
         public void Clear()
@@ -497,92 +466,17 @@ namespace CustomMissionUtility
                 eu.Remove();
             }
 
+            foreach (EditorPlatoon ep in Platoons.Values)
+            {
+                foreach (EditorUnit eu in ep.Units)
+                {
+                    eu.Remove();
+                }
+                ep.Remove();
+            }
+
             Units.Clear();
-            UnitsSerialized.Clear();
-        }
-
-        public static void LoadAssets() {
-            AssetBundle mission_creator_assets = AssetBundle.LoadFromFile(Path.Combine(MelonEnvironment.ModsDirectory, "CMUAssets"));
-            unit_placeholder = mission_creator_assets.LoadAsset<GameObject>("UNIT RED.prefab");
-            unit_placeholder.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            waypoint_placeholder = mission_creator_assets.LoadAsset<GameObject>("Waypoint.prefab");
-            waypoint_placeholder.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_blue = mission_creator_assets.LoadAsset<Material>("unit_blue.mat");
-            mat_blue.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_red = mission_creator_assets.LoadAsset<Material>("unit_red.mat");
-            mat_red.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_selected = mission_creator_assets.LoadAsset<Material>("unit_selected.mat");
-            mat_selected.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_waypoint_hi = mission_creator_assets.LoadAsset<Material>("waypoint_hi.mat");
-            mat_waypoint_hi.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_waypoint_default = mission_creator_assets.LoadAsset<Material>("waypoint_default.mat");
-            mat_waypoint_default.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            mat_default = mission_creator_assets.LoadAsset<Material>("unit_scarecrow_albedo.mat");
-            mat_default.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            editor_ui = mission_creator_assets.LoadAsset<GameObject>("EditorUI.prefab");
-            editor_ui.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            selectable = mission_creator_assets.LoadAsset<GameObject>("Selectable.prefab");
-            selectable.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-            CollapsibleButton units_collapse = editor_ui.transform.Find("UnitsRoot/Units/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            units_collapse.collapsible = editor_ui.transform.Find("UnitsRoot/Units/UnitsList").gameObject;
-            units_collapse.collapse_icon = editor_ui.transform.Find("UnitsRoot/Units/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-            Draggable units_drag = editor_ui.transform.Find("UnitsRoot/Units/Header").gameObject.AddComponent<Draggable>();
-            units_drag.parent = editor_ui.transform.Find("UnitsRoot");
-
-            CollapsibleButton plts_collapse = editor_ui.transform.Find("PltsRoot/Plts/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            plts_collapse.collapsible = editor_ui.transform.Find("PltsRoot/Plts/PltsList").gameObject;
-            plts_collapse.collapse_icon = editor_ui.transform.Find("PltsRoot/Plts/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-            Draggable plts_drag = editor_ui.transform.Find("PltsRoot/Plts/Header").gameObject.AddComponent<Draggable>();
-            plts_drag.parent = editor_ui.transform.Find("PltsRoot");
-
-            Draggable info_drag = editor_ui.transform.Find("Info/Header").gameObject.AddComponent<Draggable>();
-            info_drag.parent = editor_ui.transform.Find("Info");
-            CollapsibleButton info_collapse = editor_ui.transform.Find("Info/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            info_collapse.collapsible = editor_ui.transform.Find("Info/Contents").gameObject;
-            info_collapse.collapse_icon = editor_ui.transform.Find("Info/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-
-            editor_ui.transform.Find("Info/Contents/Position").gameObject.AddComponent<Vec3FieldHandler>();
-            editor_ui.transform.Find("Info/Contents/Rotation").gameObject.AddComponent<Vec3FieldHandler>();
-            editor_ui.transform.Find("Info").gameObject.AddComponent<UnitInfoBox>();
-
-            Draggable plt_drag = editor_ui.transform.Find("PltInfo/Header").gameObject.AddComponent<Draggable>();
-            plt_drag.parent = editor_ui.transform.Find("PltInfo");
-            CollapsibleButton plt_collapse = editor_ui.transform.Find("PltInfo/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            plt_collapse.collapsible = editor_ui.transform.Find("PltInfo/Contents").gameObject;
-            plt_collapse.collapse_icon = editor_ui.transform.Find("PltInfo/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-
-            editor_ui.transform.Find("PltInfo").gameObject.AddComponent<PlatoonInfoBox>();
-
-            TMP_Dropdown dropdown = editor_ui.transform.Find("Info/Contents/Dropdown").GetComponent<TMP_Dropdown>();
-            var options = VicGameIdsEditor.ToList();
-            dropdown.AddOptions(options);
-
-            TMP_Dropdown dropdown_spawner = editor_ui.transform.Find("UnitSpawner/Panel/Dropdown").GetComponent<TMP_Dropdown>();
-            dropdown_spawner.AddOptions(options);
-
-            CollapsibleButton waypoints_collapse = editor_ui.transform.Find("WaypointsRoot/Waypoints/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            waypoints_collapse.collapsible = editor_ui.transform.Find("WaypointsRoot/Waypoints/WaypointsList").gameObject;
-            waypoints_collapse.collapse_icon = editor_ui.transform.Find("WaypointsRoot/Waypoints/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-            Draggable waypoints_drag = editor_ui.transform.Find("WaypointsRoot/Waypoints/Header").gameObject.AddComponent<Draggable>();
-            waypoints_drag.parent = editor_ui.transform.Find("WaypointsRoot");
-
-            CollapsibleButton waypoints_info_collapse = editor_ui.transform.Find("WaypointsInfo/Header/Collapse").gameObject.AddComponent<CollapsibleButton>();
-            waypoints_info_collapse.collapsible = editor_ui.transform.Find("WaypointsInfo/Contents").gameObject;
-            waypoints_info_collapse.collapse_icon = editor_ui.transform.Find("WaypointsInfo/Header/Collapse/Text (TMP)").GetComponent<TextMeshProUGUI>();
-            Draggable waypoints_info_drag = editor_ui.transform.Find("WaypointsInfo/Header").gameObject.AddComponent<Draggable>();
-            waypoints_info_drag.parent = editor_ui.transform.Find("WaypointsInfo");
-
-            editor_ui.transform.Find("WaypointsInfo").gameObject.AddComponent<WaypointGroupInfoBox>(); 
+            Platoons.Clear();
         }
     }
 }

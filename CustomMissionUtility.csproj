@@ -88,6 +88,9 @@
     <Compile Include="CustomMissionData.cs" />
     <Compile Include="Editor\CollapsibleButton.cs" />
     <Compile Include="Editor\Editor.cs" />
+    <Compile Include="Editor\EditorAssetLoader.cs" />
+    <Compile Include="Editor\EditorController.cs" />
+    <Compile Include="FireSupport.cs" />
     <Compile Include="Editor\Infoboxes\PlatoonInfoBox.cs" />
     <Compile Include="Editor\Infoboxes\UnitInfoBox.cs" />
     <Compile Include="Editor\Infoboxes\WaypointGroupInfoBox.cs" />
@@ -97,6 +100,7 @@
     <Compile Include="Editor\Objects\EditorWaypoint.cs" />
     <Compile Include="Editor\Vec3InputHandler.cs" />
     <Compile Include="Editor\Vec3Lite.cs" />
+    <Compile Include="Events.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MelonExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
